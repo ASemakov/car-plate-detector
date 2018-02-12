@@ -1,12 +1,17 @@
 from __future__ import print_function
+import learn
 import cv2
 from matplotlib import patches
 from matplotlib import pyplot as plt
+from os import path
 
 from learn.image_loader import ImageLoader
 from learn.polygon_catalog import PolygonCatalog, Polygon
 
+DATA_DIR = path.join(path.dirname(path.dirname(learn.__file__)), 'data', 'images')
+plt.rcParams['keymap.save'] = ''  # disable s key handling
 figure = plt.figure(1)
+
 
 class EventHandler(object):
     def __init__(self, image_loader, polygon_manager):
@@ -21,6 +26,14 @@ class EventHandler(object):
         self.polygon_manager = polygon_manager
         self.image_index = 0
         self.show_image()
+
+    @property
+    def image_path(self):
+        return self.image_loader[self.image_index]
+
+    @property
+    def image_name(self):
+        return path.basename(self.image_loader[self.image_index])
 
     def button_press_event(self, event):
         """
@@ -53,17 +66,25 @@ class EventHandler(object):
         """
         :param matplotlib.backend_bases.KeyEvent event:
         """
-        if event.key == "escape":
+        print(event.key)
+        if event.key in {"c"}:  # Clean all areas
+            while len(figure.gca().patches):
+                figure.gca().patches.pop()
+            self.polygon_manager.remove_image(self.image_name)
+            figure.canvas.draw()
+        if event.key in {"escape", "d"}:  # reset areas
             while len(figure.gca().patches) > len(self.polygon_manager.get_for_image(self.image_loader[self.image_index])):
                 figure.gca().patches.pop()
             figure.canvas.draw()
-        if event.key == "enter" and figure.gca().patches:
+        if event.key in {"enter", "s"} and figure.gca().patches:  # save area in catalog
             rectangle = figure.gca().patches[0]
             """:type: patches.Rectangle"""
-            image_name = self.image_loader[self.image_index]
-            self.polygon_manager.remove_image(image_name)
+            # self.polygon_manager.remove_image(image_name)
             x, y = rectangle.xy
-            self.polygon_manager.add_polygon(image_name, Polygon(x, y, rectangle.get_width(), rectangle.get_height()))
+            self.polygon_manager.add_polygon(self.image_name,
+                                             Polygon(round(x), round(y), round(rectangle.get_width()), round(rectangle.get_height())))
+        if event.key in {"ctrl+s"}:
+            self.polygon_manager.save()
         if event.key == "right":  # Next image
             self.image_index = min(len(self.image_loader) - 1, self.image_index + 1)
             self.show_image()  # Previous image
@@ -73,16 +94,16 @@ class EventHandler(object):
 
     def show_image(self):
         del figure.gca().patches[:]
-        image_name = self.image_loader[self.image_index]
-        img = cv2.imread(image_name, cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(self.image_path, cv2.IMREAD_UNCHANGED)
         r = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         figure.gca().imshow(r)
-        for p in self.polygon_manager.get_for_image(image_name):
+        for p in self.polygon_manager.get_for_image(self.image_name):
             assert isinstance(p, Polygon)
             rect = patches.Rectangle((p.x, p.y), p.w, p.h, linewidth=1, edgecolor='r', facecolor='none')
             figure.gca().add_patch(rect)
 
-handler = EventHandler(ImageLoader("/home/asemakov/tmp/opencv/data/images"), PolygonCatalog())
+handler = EventHandler(ImageLoader(DATA_DIR), PolygonCatalog.load_or_create(path.join(DATA_DIR, "data.json")))
+
 figure.canvas.mpl_connect("button_press_event", handler.button_press_event)
 figure.canvas.mpl_connect("button_release_event", handler.button_release_event)
 figure.canvas.mpl_connect("motion_notify_event", handler.motion_notify_event)
