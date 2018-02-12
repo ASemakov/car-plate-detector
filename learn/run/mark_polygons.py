@@ -57,7 +57,7 @@ class EventHandler(object):
         if self.x is None or self.y is None:
             return
         rect = patches.Rectangle((self.x, self.y), event.xdata - self.x, event.ydata - self.y, linewidth=1, edgecolor='r', facecolor='none')
-        while len(figure.gca().patches) > len(self.polygon_manager.get_for_image(self.image_loader[self.image_index])):
+        while len(figure.gca().patches) > len(self.polygon_manager.get_for_image(self.image_name)):
             figure.gca().patches.pop()
         figure.gca().add_patch(rect)
         figure.canvas.draw()
@@ -73,7 +73,7 @@ class EventHandler(object):
             self.polygon_manager.remove_image(self.image_name)
             figure.canvas.draw()
         if event.key in {"escape", "d"}:  # reset areas
-            while len(figure.gca().patches) > len(self.polygon_manager.get_for_image(self.image_loader[self.image_index])):
+            while len(figure.gca().patches) > len(self.polygon_manager.get_for_image(self.image_name)):
                 figure.gca().patches.pop()
             figure.canvas.draw()
         if event.key in {"enter", "s"} and figure.gca().patches:  # save area in catalog
