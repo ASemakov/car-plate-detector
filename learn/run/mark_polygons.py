@@ -5,13 +5,14 @@ from matplotlib import patches
 from matplotlib import pyplot as plt
 from os import path
 
+from learn.const import DATA_DIR, DESCRIPTION_FILE
 from learn.image_loader import ImageLoader
 from learn.polygon_catalog import PolygonCatalog, Polygon
 
-DATA_DIR = path.join(path.dirname(path.dirname(learn.__file__)), 'data', 'images')
+
 plt.rcParams['keymap.save'] = ''  # disable s key handling
 figure = plt.figure(1)
-
+plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
 class EventHandler(object):
     def __init__(self, image_loader, polygon_manager):
@@ -77,7 +78,7 @@ class EventHandler(object):
                 figure.gca().patches.pop()
             figure.canvas.draw()
         if event.key in {"enter", "s"} and figure.gca().patches:  # save area in catalog
-            rectangle = figure.gca().patches[0]
+            rectangle = figure.gca().patches[-1]
             """:type: patches.Rectangle"""
             # self.polygon_manager.remove_image(image_name)
             x, y = rectangle.xy
@@ -91,6 +92,12 @@ class EventHandler(object):
         if event.key == "left":
             self.image_index = max(0, self.image_index - 1)
             self.show_image()
+        if event.key == "pagedown":
+            self.image_index = min(len(self.image_loader) - 1, self.image_index + 10)
+            self.show_image()
+        if event.key == "pageup":
+            self.image_index = max(0, self.image_index - 10)
+            self.show_image()
 
     def show_image(self):
         del figure.gca().patches[:]
@@ -102,7 +109,7 @@ class EventHandler(object):
             rect = patches.Rectangle((p.x, p.y), p.w, p.h, linewidth=1, edgecolor='r', facecolor='none')
             figure.gca().add_patch(rect)
 
-handler = EventHandler(ImageLoader(DATA_DIR), PolygonCatalog.load_or_create(path.join(DATA_DIR, "data.json")))
+handler = EventHandler(ImageLoader(DATA_DIR), PolygonCatalog.load_or_create(DESCRIPTION_FILE))
 
 figure.canvas.mpl_connect("button_press_event", handler.button_press_event)
 figure.canvas.mpl_connect("button_release_event", handler.button_release_event)

@@ -15,11 +15,24 @@ class Polygon(object):
     def __repr__(self):
         return str(self)
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.x == other.x and self.y == other.y and self.w == other.h and self.y == other.h
+
+    def __cmp__(self, other):
+        return (self.x - other.x) * 10**5 + self.y - other.y
+
+    def __hash__(self):
+        return self.x*10**9 + self.y*10**6 + self.h*10**3 + self.w
 
 class PolygonCatalog(object):
     def __init__(self, data_file):
         self._catalog = {}
         self._data_file = data_file
+
+    def __iter__(self):
+        return iter(self._catalog.items())
 
     def add_polygon(self, image_name, polygon):
         self._catalog.setdefault(image_name, []).append(polygon)
