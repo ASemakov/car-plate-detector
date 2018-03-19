@@ -4,5 +4,6 @@
 # pyenv
 .python-version
 
-# Pycharm
+# IDE files
 .idea/
+.ropeproject/
